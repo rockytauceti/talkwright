@@ -1,44 +1,43 @@
 import { auth } from '@clerk/nextjs/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
-interface Talk {
-  id: string
-  title: string
-  category: string
-  created_at: string
-  updated_at: string
-}
-
 const CATEGORY_LABELS: Record<string, string> = {
-  sacrament: 'Sacrament Meeting',
-  primary: 'Primary Talk',
-  funeral: 'Funeral / Eulogy',
-  conference: 'Conference Style',
+  lds_sacrament: 'Sacrament Meeting',
+  lds_primary: 'Primary Talk',
+  lds_funeral: 'Funeral / Eulogy',
+  lds_conference: 'Conference Style',
+  christian_sermon: 'Sermon',
+  wedding_toast: 'Wedding Toast',
+  eulogy: 'Eulogy',
   graduation: 'Graduation Speech',
+  ted_style: 'TED-style',
   motivational: 'Motivational',
-  ted: 'TED-style',
-  sermon: 'Sermon',
   other: 'Other',
 }
 
 export default async function DashboardPage() {
-  const { userId } = await auth()
+  const { userId: clerkUserId } = await auth()
 
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('id')
-    .eq('clerk_id', userId)
-    .single()
+  const user = await prisma.user.findUnique({
+    where: { clerkUserId: clerkUserId! },
+    include: {
+      talks: {
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          category: true,
+          status: true,
+          wordCount: true,
+          estimatedMinutes: true,
+          updatedAt: true,
+        },
+      },
+    },
+  })
 
-  const talks: Talk[] = user
-    ? (await supabaseAdmin
-        .from('talks')
-        .select('id, title, category, created_at, updated_at')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
-      ).data ?? []
-    : []
+  const talks = user?.talks ?? []
 
   return (
     <div>
@@ -76,12 +75,30 @@ export default async function DashboardPage() {
                   <h3 className="font-semibold text-zinc-900 group-hover:text-amber-600 transition-colors truncate">
                     {talk.title || 'Untitled talk'}
                   </h3>
-                  <p className="text-zinc-400 text-sm mt-0.5">
-                    {CATEGORY_LABELS[talk.category] ?? talk.category}
-                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-zinc-400 text-sm">
+                      {CATEGORY_LABELS[talk.category] ?? talk.category}
+                    </p>
+                    {talk.wordCount > 0 && (
+                      <>
+                        <span className="text-zinc-200">·</span>
+                        <p className="text-zinc-400 text-sm">
+                          {talk.wordCount} words · ~{talk.estimatedMinutes}m
+                        </p>
+                      </>
+                    )}
+                    <span className="text-zinc-200">·</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                      talk.status === 'final'
+                        ? 'bg-green-50 text-green-700'
+                        : 'bg-zinc-100 text-zinc-500'
+                    }`}>
+                      {talk.status}
+                    </span>
+                  </div>
                 </div>
                 <span className="text-zinc-300 text-sm whitespace-nowrap">
-                  {new Date(talk.updated_at).toLocaleDateString()}
+                  {new Date(talk.updatedAt).toLocaleDateString()}
                 </span>
               </div>
             </Link>

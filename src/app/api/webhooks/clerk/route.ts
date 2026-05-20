@@ -1,7 +1,7 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
@@ -36,20 +36,22 @@ export async function POST(req: Request) {
   }
 
   if (evt.type === 'user.created') {
-    const { id, email_addresses, first_name, last_name } = evt.data
+    const { id, email_addresses } = evt.data
     const email = email_addresses[0]?.email_address ?? ''
 
-    await supabaseAdmin.from('users').insert({
-      clerk_id: id,
-      email,
-      first_name: first_name ?? '',
-      last_name: last_name ?? '',
+    await prisma.user.create({
+      data: {
+        clerkUserId: id,
+        email,
+      },
     })
   }
 
   if (evt.type === 'user.deleted') {
     const { id } = evt.data
-    await supabaseAdmin.from('users').delete().eq('clerk_id', id)
+    if (id) {
+      await prisma.user.delete({ where: { clerkUserId: id } })
+    }
   }
 
   return new Response('OK', { status: 200 })

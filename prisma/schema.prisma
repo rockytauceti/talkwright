@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String          @id @default(cuid())
+  clerkUserId    String          @unique
+  email          String          @unique
+  plan           Plan            @default(free)
+  proExpiresAt   DateTime?
+  aiCreditsUsed  Int             @default(0)
+  aiCreditsReset DateTime        @default(now())
+  createdAt      DateTime        @default(now())
+  talks          Talk[]
+  aiInteractions AIInteraction[]
+}
+
+model Talk {
+  id                String          @id @default(cuid())
+  userId            String
+  title             String
+  category          TalkCategory
+  status            TalkStatus      @default(draft)
+  body              String?
+  outline           Json?
+  notes             String?
+  tags              String[]
+  metadata          Json?
+  isShared          Boolean         @default(false)
+  shareToken        String?         @unique
+  isPublic          Boolean         @default(false)
+  allowedAsTemplate Boolean         @default(false)
+  communityRating   Int             @default(0)
+  wordCount         Int             @default(0)
+  estimatedMinutes  Int             @default(0)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aiInteractions    AIInteraction[]
+}
+
+model AIInteraction {
+  id               String            @id @default(cuid())
+  userId           String
+  talkId           String
+  type             AIInteractionType
+  promptTokens     Int               @default(0)
+  completionTokens Int               @default(0)
+  creditCounted    Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  talk             Talk              @relation(fields: [talkId], references: [id], onDelete: Cascade)
+}
+
+model EarlyAccess {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+enum AIInteractionType {
+  outline
+  draft
+  revision
+  suggestion
+}
+
+enum Plan {
+  free
+  pro
+}
+
+enum TalkCategory {
+  lds_sacrament
+  lds_primary
+  lds_funeral
+  lds_conference
+  christian_sermon
+  wedding_toast
+  eulogy
+  graduation
+  ted_style
+  motivational
+  other
+}
+
+enum TalkStatus {
+  draft
+  final
+}

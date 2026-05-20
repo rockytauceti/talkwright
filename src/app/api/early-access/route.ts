@@ -1,13 +1,15 @@
-import { supabaseAdmin } from '@/lib/supabase'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json()
     if (!email) return new Response('Missing email', { status: 400 })
 
-    await supabaseAdmin
-      .from('early_access')
-      .upsert({ email }, { onConflict: 'email' })
+    await prisma.earlyAccess.upsert({
+      where: { email },
+      update: {},
+      create: { email },
+    })
 
     return new Response('OK', { status: 200 })
   } catch {
