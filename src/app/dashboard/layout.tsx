@@ -16,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           >
             + New talk
           </Link>
-          <UserButton afterSignOutUrl="/" />
+          <UserButton />
         </div>
       </header>
       <div className="max-w-4xl mx-auto px-6 py-10">{children}</div>
