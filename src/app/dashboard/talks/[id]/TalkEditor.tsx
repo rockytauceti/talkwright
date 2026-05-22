@@ -486,7 +486,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                 Resources
                 <span className="font-normal text-[#1E1E1E]/30 ml-1">— scriptures, quotes, stories</span>
               </label>
-              <ResourcesPanel resources={talkResources} onChange={handleResourcesChange} />
+              <ResourcesPanel resources={talkResources} onChange={handleResourcesChange} talkId={initialTalk.id} />
             </div>
 
             {/* Scripture suggestions */}
