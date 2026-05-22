@@ -79,7 +79,7 @@ function HighlightedText({ text, words }: { text: string; words: string[] }) {
     <>
       {parts.map((part, i) =>
         lowerWords.some(w => part.toLowerCase() === w) ? (
-          <mark key={i} className="bg-amber-100 text-amber-900 not-italic rounded px-0.5">
+          <mark key={i} className="bg-stone-200 text-stone-800 not-italic rounded px-0.5">
             {part}
           </mark>
         ) : (
@@ -339,8 +339,8 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
         {outline ? (
           <div className="space-y-3">
             {outline.openingHook && (
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Opening hook</p>
+              <div className="bg-stone-100 border border-stone-200 rounded-xl p-4">
+                <p className="text-xs font-semibold text-stone-700 uppercase tracking-wide mb-1">Opening hook</p>
                 <p className="text-sm text-zinc-700">{outline.openingHook}</p>
               </div>
             )}
@@ -369,7 +369,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
           </div>
         ) : isGeneratingOutline ? (
           <div className="border border-zinc-100 rounded-xl p-8 text-center">
-            <div className="animate-pulse text-amber-400 text-2xl mb-3">✦</div>
+            <div className="animate-pulse text-stone-400 text-2xl mb-3">✦</div>
             <p className="text-sm text-zinc-500">Building your outline…</p>
             {outlineStreamText && (
               <p className="text-xs text-zinc-300 mt-2 font-mono truncate max-w-xs mx-auto">
@@ -387,7 +387,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                 placeholder="e.g. Faith in hard times"
                 value={outlineForm.theme}
                 onChange={e => handleThemeChange(e.target.value)}
-                className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-amber-400"
+                className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-stone-900"
               />
             </div>
 
@@ -404,7 +404,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                     }}
                     className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
                       !useCustomAudience && outlineForm.audience === opt
-                        ? 'border-amber-400 bg-amber-50 text-amber-800 font-medium'
+                        ? 'border-stone-900 bg-stone-100 text-stone-900 font-medium'
                         : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                     }`}
                   >
@@ -415,7 +415,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                   onClick={() => setUseCustomAudience(true)}
                   className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
                     useCustomAudience
-                      ? 'border-amber-400 bg-amber-50 text-amber-800 font-medium'
+                      ? 'border-stone-900 bg-stone-100 text-stone-900 font-medium'
                       : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                   }`}
                 >
@@ -429,7 +429,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                   placeholder="e.g. High school seniors"
                   value={outlineForm.customAudience}
                   onChange={e => setOutlineForm(f => ({ ...f, customAudience: e.target.value }))}
-                  className="mt-2 w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-amber-400"
+                  className="mt-2 w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-stone-900"
                 />
               )}
             </div>
@@ -447,7 +447,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                 step={1}
                 value={outlineForm.length}
                 onChange={e => setOutlineForm(f => ({ ...f, length: Number(e.target.value) }))}
-                className="w-full accent-amber-500"
+                className="w-full accent-stone-800"
               />
               <div className="flex justify-between text-xs text-zinc-300 mt-1 select-none">
                 <span>2m</span><span>10m</span><span>20m</span><span>30m</span>
@@ -464,7 +464,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                 value={outlineForm.personalNotes}
                 onChange={e => setOutlineForm(f => ({ ...f, personalNotes: e.target.value }))}
                 rows={3}
-                className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-amber-400 resize-none"
+                className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-stone-900 resize-none"
               />
             </div>
 
@@ -486,9 +486,9 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                     <button
                       key={i}
                       onClick={() => addScriptureToNotes(s.reference, s.text)}
-                      className="w-full text-left border border-zinc-100 hover:border-amber-200 hover:bg-amber-50/60 rounded-lg p-3 transition-colors group"
+                      className="w-full text-left border border-zinc-100 hover:border-stone-300 hover:bg-stone-100/60 rounded-lg p-3 transition-colors group"
                     >
-                      <p className="text-xs font-semibold text-zinc-700 group-hover:text-amber-700 mb-1">
+                      <p className="text-xs font-semibold text-zinc-700 group-hover:text-stone-800 mb-1">
                         {s.reference}
                       </p>
                       <p className="text-xs text-zinc-500 leading-relaxed">
@@ -517,7 +517,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
             {outlineError && <p className="text-red-500 text-sm">{outlineError}</p>}
             <button
               onClick={generateOutline}
-              className="bg-amber-500 hover:bg-amber-400 text-black font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors"
+              className="bg-stone-1000 hover:bg-stone-800 text-black font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors"
             >
               Generate outline →
             </button>
@@ -548,7 +548,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
         ) : isGeneratingDraft ? (
           <div>
             <div className="flex items-center gap-2 mb-3 text-sm text-zinc-400">
-              <span className="animate-pulse text-amber-400">✦</span>
+              <span className="animate-pulse text-stone-400">✦</span>
               Writing your draft…
             </div>
             <div className="w-full min-h-96 border border-zinc-100 rounded-xl p-5 text-zinc-700 text-sm leading-relaxed whitespace-pre-wrap">
@@ -575,7 +575,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                     onClick={() => setTone(t.value)}
                     className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
                       tone === t.value
-                        ? 'border-amber-400 bg-amber-50 text-amber-800 font-medium'
+                        ? 'border-stone-900 bg-stone-100 text-stone-900 font-medium'
                         : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                     }`}
                   >
@@ -597,3 +597,4 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
     </div>
   )
 }
+
