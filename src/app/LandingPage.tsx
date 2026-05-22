@@ -6,10 +6,10 @@ import Logo from '@/components/Logo'
 
 function FeatureCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <div className="bg-stone-900 border border-stone-800 rounded-2xl p-6 text-left">
-      <div className="mb-4 text-stone-300">{icon}</div>
-      <h3 className="text-stone-100 font-semibold text-base mb-2">{title}</h3>
-      <p className="text-stone-500 text-sm leading-relaxed">{body}</p>
+    <div className="bg-[#3C3E3A] border border-[#3C3E3A] rounded-2xl p-6 text-left">
+      <div className="mb-4 text-[#7A82AB]">{icon}</div>
+      <h3 className="text-[#E8F1F2] font-semibold text-base mb-2">{title}</h3>
+      <p className="text-[#E8F1F2]/50 text-sm leading-relaxed">{body}</p>
     </div>
   )
 }
@@ -36,23 +36,23 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#1c1917] flex flex-col">
+    <main className="min-h-screen bg-[#1E1E1E] flex flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-8 py-6">
         <div className="flex items-center gap-2.5">
           <Logo size={26} theme="dark" />
-          <span className="text-stone-100 font-semibold text-lg tracking-tight">TalkWright</span>
+          <span className="text-[#E8F1F2] font-semibold text-lg tracking-tight">TalkWright</span>
         </div>
         <div className="flex items-center gap-4">
           <Link
             href="/sign-in"
-            className="text-sm text-stone-500 hover:text-stone-300 transition-colors"
+            className="text-sm text-[#E8F1F2]/40 hover:text-[#E8F1F2] transition-colors"
           >
             Sign in
           </Link>
           <Link
             href="/sign-up"
-            className="text-sm bg-stone-100 hover:bg-white text-stone-900 font-semibold rounded-lg px-4 py-2 transition-colors"
+            className="text-sm bg-[#E8F1F2] hover:bg-white text-[#1E1E1E] font-semibold rounded-lg px-4 py-2 transition-colors"
           >
             Start free
           </Link>
@@ -62,24 +62,24 @@ export default function LandingPage() {
       {/* Hero */}
       <div className="flex flex-col items-center px-6 pt-16 pb-20 text-center">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-stone-100 leading-tight mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#E8F1F2] leading-tight mb-6">
             Craft talks that{' '}
-            <span className="text-stone-400">actually land.</span>
+            <span className="text-[#7A82AB]">actually land.</span>
           </h1>
-          <p className="text-stone-400 text-lg sm:text-xl leading-relaxed mb-10">
+          <p className="text-[#E8F1F2]/55 text-lg sm:text-xl leading-relaxed mb-10">
             AI-powered outlines, scripture suggestions, and full drafts —
             for Sunday sermons, graduation speeches, and everything in between.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/sign-up"
-              className="w-full sm:w-auto bg-stone-100 hover:bg-white text-stone-900 font-semibold rounded-xl px-8 py-3.5 transition-colors text-base"
+              className="w-full sm:w-auto bg-[#E8F1F2] hover:bg-white text-[#1E1E1E] font-semibold rounded-xl px-8 py-3.5 transition-colors text-base"
             >
               Start writing free
             </Link>
             <Link
               href="/sign-in"
-              className="w-full sm:w-auto border border-stone-700 hover:border-stone-500 text-stone-400 hover:text-stone-200 font-medium rounded-xl px-8 py-3.5 transition-colors text-base"
+              className="w-full sm:w-auto border border-[#3C3E3A] hover:border-[#7A82AB] text-[#E8F1F2]/50 hover:text-[#E8F1F2] font-medium rounded-xl px-8 py-3.5 transition-colors text-base"
             >
               Sign in
             </Link>
@@ -122,13 +122,13 @@ export default function LandingPage() {
       </div>
 
       {/* Email capture */}
-      <div className="border-t border-stone-800 px-6 py-16 text-center">
+      <div className="border-t border-[#3C3E3A] px-6 py-16 text-center">
         <div className="max-w-md mx-auto">
-          <p className="text-stone-400 text-sm mb-6">
+          <p className="text-[#E8F1F2]/40 text-sm mb-6">
             Not ready to sign up? Stay in the loop.
           </p>
           {submitted ? (
-            <div className="inline-flex items-center gap-2 bg-stone-800 border border-stone-700 rounded-xl px-6 py-4 text-stone-300 text-sm">
+            <div className="inline-flex items-center gap-2 bg-[#3C3E3A] border border-[#3C3E3A] rounded-xl px-6 py-4 text-[#E8F1F2]/70 text-sm">
               ✓ You&apos;re on the list.
             </div>
           ) : (
@@ -139,12 +139,12 @@ export default function LandingPage() {
                 placeholder="your@email.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="flex-1 bg-stone-800 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 placeholder-stone-600 focus:outline-none focus:border-stone-500 transition-colors text-sm"
+                className="flex-1 bg-[#3C3E3A] border border-[#3C3E3A] rounded-xl px-4 py-3 text-[#E8F1F2] placeholder-[#E8F1F2]/25 focus:outline-none focus:border-[#7A82AB] transition-colors text-sm"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-stone-700 hover:bg-stone-600 text-stone-200 font-medium rounded-xl px-5 py-3 transition-colors disabled:opacity-50 whitespace-nowrap text-sm"
+                className="bg-[#3C3E3A] hover:bg-[#7A82AB] text-[#E8F1F2] font-medium rounded-xl px-5 py-3 transition-colors disabled:opacity-50 whitespace-nowrap text-sm border border-[#7A82AB]/30"
               >
                 {loading ? 'Joining…' : 'Notify me'}
               </button>
@@ -154,7 +154,7 @@ export default function LandingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="px-8 py-6 text-center text-stone-700 text-xs">
+      <footer className="px-8 py-6 text-center text-[#E8F1F2]/20 text-xs">
         © {new Date().getFullYear()} TalkWright
       </footer>
     </main>
