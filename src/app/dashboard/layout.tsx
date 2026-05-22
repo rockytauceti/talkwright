@@ -1,13 +1,14 @@
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
+import Logo from '@/components/Logo'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white">
-      {/* Top nav */}
       <header className="border-b border-zinc-100 px-6 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="font-semibold text-zinc-900 tracking-tight">
-          ✦ TalkWright
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Logo size={26} theme="light" />
+          <span className="font-semibold text-zinc-900 tracking-tight">TalkWright</span>
         </Link>
         <div className="flex items-center gap-4">
           <Link
