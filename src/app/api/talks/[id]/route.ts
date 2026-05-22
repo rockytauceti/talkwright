@@ -38,7 +38,7 @@ export async function PATCH(
     const existing = await prisma.talk.findFirst({ where: { id, userId: user.id } })
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const { title, body: talkBody, outline, notes, tags, status, category } = body
+    const { title, body: talkBody, outline, notes, tags, status, category, metadata } = body
 
     // Compute word count + estimated minutes if body is provided
     let wordCount = existing.wordCount
@@ -58,7 +58,8 @@ export async function PATCH(
         ...(notes !== undefined && { notes }),
         ...(tags !== undefined && { tags }),
         ...(status !== undefined && { status }),
-        ...(category !== undefined && { category }),
+        ...(category !== undefined ...(category !== undefined && { category }),...(category !== undefined && { category }), { category }),
+        ...(metadata !== undefined ...(category !== undefined && { category }),...(category !== undefined && { category }), { metadata }),
       },
     })
 
