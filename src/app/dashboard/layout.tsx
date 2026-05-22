@@ -1,26 +1,17 @@
-import { UserButton } from '@clerk/nextjs'
-import Link from 'next/link'
-import Logo from '@/components/Logo'
+import Sidebar from '@/components/Sidebar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#E8F1F2]">
-      <header className="bg-[#E8F1F2] border-b border-[#3C3E3A]/15 px-6 py-4 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <Logo size={24} theme="light" />
-          <span className="font-semibold text-[#1E1E1E] tracking-tight">TalkWright</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/dashboard/new"
-            className="bg-[#7776BC] hover:bg-[#7A82AB] text-[#E8F1F2] text-sm font-semibold rounded-lg px-4 py-2 transition-colors"
-          >
-            + New talk
-          </Link>
-          <UserButton />
-        </div>
-      </header>
-      <div className="max-w-4xl mx-auto px-6 py-10">{children}</div>
+    <div className="min-h-screen bg-[#E8F1F2] flex">
+      <Sidebar />
+      {/* Mobile header — visible only on small screens */}
+      <div className="sm:hidden fixed top-0 left-0 right-0 z-10 bg-[#E8F1F2] border-b border-[#3C3E3A]/10 px-5 py-4 flex items-center justify-between">
+        <span className="font-bold text-[#1E1E1E] text-sm tracking-tight">TalkWright</span>
+        <a href="/dashboard/new" className="text-sm text-[#7776BC] font-semibold">+ New</a>
+      </div>
+      <main className="flex-1 min-w-0 overflow-auto sm:pt-0 pt-14">
+        {children}
+      </main>
     </div>
   )
 }
