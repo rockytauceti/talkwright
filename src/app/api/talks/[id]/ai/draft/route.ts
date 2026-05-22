@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireUser } from '@/lib/auth'
+import { clerkClient } from '@clerk/nextjs/server'
 import {
   anthropic,
   AI_MODEL,
@@ -74,15 +75,29 @@ export async function POST(
   }
 
   const body = await req.json().catch(() => ({}))
-  const { tone, resources = [] } = body
+  const { tone, resources = [], mirrorVoice = false } = body
+
+  // Fetch voice profile if mirror mode is on
+  let voiceProfile: string | null = null
+  if (mirrorVoice) {
+    try {
+      const client = await clerkClient()
+      const clerkUser = await client.users.getUser(user.clerkUserId)
+      voiceProfile = (clerkUser.privateMetadata?.voiceProfile as string) ?? null
+    } catch {
+      // Non-fatal — proceed without voice profile
+    }
+  }
 
   const categoryDesc = CATEGORY_PROMPTS[talk.category] ?? 'a talk'
   const outline = talk.outline as Record<string, unknown>
   const { styleRef, contentResources } = formatResources(resources)
 
-  const prompt = `You are an expert writer specializing in ${categoryDesc}.${styleRef ? `
+  const prompt = `You are an expert writer specializing in ${categoryDesc}.${voiceProfile ? `
 
-The speaker has provided a past talk as a voice/style reference. Study it carefully and mirror their writing voice — their vocabulary, sentence rhythm, storytelling approach, and tone — in the new draft.
+The speaker has provided their voice profile. Mirror it closely in the draft — their vocabulary, sentence rhythm, storytelling approach, and tone.
+
+${voiceProfile}` : ''}${styleRef ? `\n\n${voiceProfile ? 'Additionally, they have provided a specific past talk as a style reference:' : 'The speaker has provided a past talk as a voice/style reference. Study it and mirror their writing voice in the new draft.'}
 
 ${styleRef}` : ''}
 
@@ -92,7 +107,7 @@ ${JSON.stringify(outline, null, 2)}
 ${contentResources ? `\nResources to weave in:\n${contentResources}\n` : ''}${tone ? `\nTone: ${tone}` : ''}
 
 Guidelines:
-- Write in first person, warm and conversational${styleRef ? '\n- Match the speaker\'s natural voice from the style reference above' : ''}
+- Write in first person, warm and conversational${(voiceProfile || styleRef) ? '\n- Match the speaker\'s natural voice from the profile above' : ''}
 - Use natural transitions between sections
 - Keep it authentic — avoid clichés and hollow filler phrases
 - For LDS talks: appropriate doctrinal references are welcome, but don't overload
