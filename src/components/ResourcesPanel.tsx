@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 
-export type ResourceType = 'scripture' | 'quote' | 'personal_story' | 'conference_talk' | 'note'
+export type ResourceType = 'scripture' | 'quote' | 'personal_story' | 'conference_talk' | 'note' | 'past_talk'
 
 export type Resource = {
   id: string
@@ -20,6 +20,7 @@ const TYPE_META: Record<ResourceType, { label: string; badge: string }> = {
   personal_story:  { label: 'Personal story',  badge: 'bg-[#3C3E3A]/10 text-[#3C3E3A]/70' },
   conference_talk: { label: 'Conf. talk',      badge: 'bg-[#7776BC]/8  text-[#7776BC]/70' },
   note:            { label: 'Note',            badge: 'bg-[#3C3E3A]/6  text-[#3C3E3A]/50' },
+  past_talk:       { label: 'Past talk',       badge: 'bg-amber-100 text-amber-700' },
 }
 
 function newResource(type: ResourceType): Resource {
@@ -36,8 +37,10 @@ function ResourceCard({
   onDelete: () => void
 }) {
   const meta = TYPE_META[resource.type]
-
+  const [expanded, setExpanded] = useState(false)
   const set = (patch: Partial<Resource>) => onChange({ ...resource, ...patch })
+
+  const isLong = resource.text.length > 300
 
   return (
     <div className="border border-[#3C3E3A]/12 rounded-xl p-3.5 bg-white group relative">
@@ -64,29 +67,54 @@ function ResourceCard({
           className="w-full text-xs font-semibold text-[#1E1E1E] placeholder-[#1E1E1E]/25 bg-transparent border-0 outline-none mb-1"
         />
       )}
-      {resource.type === 'conference_talk' && (
+      {(resource.type === 'conference_talk' || resource.type === 'past_talk') && (
         <input
-          placeholder="Talk title"
+          placeholder={resource.type === 'past_talk' ? 'Talk title or occasion' : 'Talk title'}
           value={resource.title ?? ''}
           onChange={e => set({ title: e.target.value })}
           className="w-full text-xs font-semibold text-[#1E1E1E] placeholder-[#1E1E1E]/25 bg-transparent border-0 outline-none mb-1"
         />
       )}
 
-      {/* Main text */}
-      <textarea
-        placeholder={
-          resource.type === 'scripture'       ? 'Scripture text…' :
-          resource.type === 'quote'           ? 'Quote text…' :
-          resource.type === 'personal_story'  ? 'Describe the story you want to tell…' :
-          resource.type === 'conference_talk' ? 'Key passage or notes…' :
-          'Notes…'
-        }
-        value={resource.text}
-        onChange={e => set({ text: e.target.value })}
-        rows={2}
-        className="w-full text-sm text-[#1E1E1E]/80 placeholder-[#1E1E1E]/25 bg-transparent border-0 outline-none resize-none leading-relaxed"
-      />
+      {/* Main text — collapsed for long past_talk content */}
+      {resource.type === 'past_talk' && isLong && !expanded ? (
+        <div>
+          <p className="text-sm text-[#1E1E1E]/60 leading-relaxed line-clamp-3 whitespace-pre-wrap">
+            {resource.text.slice(0, 300)}…
+          </p>
+          <button
+            onClick={() => setExpanded(true)}
+            className="text-[11px] text-[#7776BC] hover:text-[#7A82AB] mt-1 transition-colors"
+          >
+            Show full text
+          </button>
+        </div>
+      ) : (
+        <div>
+          <textarea
+            placeholder={
+              resource.type === 'scripture'       ? 'Scripture text…' :
+              resource.type === 'quote'           ? 'Quote text…' :
+              resource.type === 'personal_story'  ? 'Describe the story you want to tell…' :
+              resource.type === 'conference_talk' ? 'Key passage or notes…' :
+              resource.type === 'past_talk'       ? 'Paste a past talk or it will be filled from your file upload…' :
+              'Notes…'
+            }
+            value={resource.text}
+            onChange={e => set({ text: e.target.value })}
+            rows={resource.type === 'past_talk' ? 5 : 2}
+            className="w-full text-sm text-[#1E1E1E]/80 placeholder-[#1E1E1E]/25 bg-transparent border-0 outline-none resize-none leading-relaxed"
+          />
+          {resource.type === 'past_talk' && isLong && expanded && (
+            <button
+              onClick={() => setExpanded(false)}
+              className="text-[11px] text-[#7776BC] hover:text-[#7A82AB] mt-1 transition-colors"
+            >
+              Collapse
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Attribution row */}
       {(resource.type === 'quote' || resource.type === 'conference_talk') && (
@@ -105,6 +133,9 @@ function ResourceCard({
           className="w-full text-[10px] text-[#1E1E1E]/35 placeholder-[#1E1E1E]/20 bg-transparent border-0 outline-none mt-1"
         />
       )}
+      {resource.type === 'past_talk' && resource.text.length > 0 && (
+        <p className="text-[10px] text-[#1E1E1E]/25 mt-1.5">{resource.text.length.toLocaleString()} chars · AI will match your voice from this</p>
+      )}
     </div>
   )
 }
@@ -112,10 +143,15 @@ function ResourceCard({
 export default function ResourcesPanel({
   resources,
   onChange,
+  talkId,
 }: {
   resources: Resource[]
   onChange: (resources: Resource[]) => void
+  talkId?: string
 }) {
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const add = useCallback((type: ResourceType) => {
     onChange([...resources, newResource(type)])
   }, [resources, onChange])
@@ -127,6 +163,45 @@ export default function ResourcesPanel({
   const remove = useCallback((id: string) => {
     onChange(resources.filter(r => r.id !== id))
   }, [resources, onChange])
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Reset so same file can be re-selected
+    e.target.value = ''
+
+    setUploading(true)
+    try {
+      let text = ''
+      if (file.name.endsWith('.txt')) {
+        text = await file.text()
+      } else if (talkId) {
+        const form = new FormData()
+        form.append('file', file)
+        const res = await fetch(`/api/talks/${talkId}/upload`, { method: 'POST', body: form })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? 'Upload failed')
+        text = data.text
+      } else {
+        throw new Error('Cannot upload this file type without a talk ID')
+      }
+
+      const newRes: Resource = {
+        id: Math.random().toString(36).slice(2),
+        type: 'past_talk',
+        text: text.slice(0, 8000),
+        title: file.name.replace(/\.[^.]+$/, ''),
+      }
+      onChange([...resources, newRes])
+    } catch (err) {
+      console.error('Upload failed:', err)
+      alert(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const manualTypes: ResourceType[] = ['scripture', 'quote', 'personal_story', 'conference_talk', 'note']
 
   return (
     <div className="space-y-2.5">
@@ -145,7 +220,7 @@ export default function ResourcesPanel({
 
       {/* Add buttons */}
       <div className="flex flex-wrap gap-1.5 pt-1">
-        {(Object.keys(TYPE_META) as ResourceType[]).map(type => (
+        {manualTypes.map(type => (
           <button
             key={type}
             onClick={() => add(type)}
@@ -154,7 +229,31 @@ export default function ResourcesPanel({
             + {TYPE_META[type].label}
           </button>
         ))}
+        {/* Past talk — manual or upload */}
+        <button
+          onClick={() => add('past_talk')}
+          className="text-[11px] border border-[#3C3E3A]/15 text-[#1E1E1E]/45 hover:border-amber-400 hover:text-amber-600 rounded-lg px-2.5 py-1 transition-colors"
+        >
+          + Past talk
+        </button>
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="text-[11px] border border-[#3C3E3A]/15 text-[#1E1E1E]/45 hover:border-amber-400 hover:text-amber-600 rounded-lg px-2.5 py-1 transition-colors disabled:opacity-40"
+        >
+          {uploading ? 'Reading…' : '↑ Upload file'}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.docx,.pdf"
+          className="hidden"
+          onChange={handleFileUpload}
+        />
       </div>
+      {uploading && (
+        <p className="text-[11px] text-[#1E1E1E]/35 animate-pulse">Extracting text from file…</p>
+      )}
     </div>
   )
 }
@@ -179,6 +278,10 @@ export function resourcesToPromptText(resources: Resource[]): string {
       const title = r.title ? `"${r.title}"` : 'Conference talk'
       const by = r.attribution ? ` by ${r.attribution}` : ''
       return `[Conference talk] ${title}${by}: ${r.text}`
+    }
+    if (r.type === 'past_talk') {
+      const title = r.title ? ` ("${r.title}")` : ''
+      return `[Past talk by this speaker${title}]\n${r.text.slice(0, 1500)}`
     }
     return `[Note] ${r.text}`
   })
