@@ -16,6 +16,7 @@ type Talk = {
   body: string | null; outline: Outline | null
   wordCount: number; estimatedMinutes: number
   metadata?: { resources?: TalkResource[] } | null
+  isPublic: boolean; shareToken: string | null
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -55,6 +56,9 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
   const [wordCount, setWordCount] = useState(initialTalk.wordCount)
   const [estimatedMinutes, setEstimatedMinutes] = useState(initialTalk.estimatedMinutes)
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
+  const [isPublic, setIsPublic] = useState(initialTalk.isPublic)
+  const [shareToken, setShareToken] = useState<string | null>(initialTalk.shareToken)
+  const [copied, setCopied] = useState(false)
 
   // User resources
   const [talkResources, setTalkResources] = useState<TalkResource[]>(
@@ -133,6 +137,25 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
       body: JSON.stringify({ status: next }),
     })
   }
+
+  async function handlePublishToggle() {
+    const next = !isPublic
+    setIsPublic(next)
+    const res = await fetch(`/api/talks/${initialTalk.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPublic: next }),
+    })
+    const data = await res.json()
+    if (data.talk?.shareToken) setShareToken(data.talk.shareToken)
+  }
+
+  function copyPublicLink() {
+    if (!shareToken) return
+    navigator.clipboard.writeText(`${window.location.origin}/t/${shareToken}`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
 
   function handleThemeChange(val: string) {
     setOutlineForm(f => ({ ...f, theme: val }))
@@ -275,9 +298,29 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
           {wordCount > 0 && (
             <span className="text-xs text-[#1E1E1E]/35">{wordCount} words · ~{estimatedMinutes}m</span>
           )}
-          <span className="text-xs text-[#1E1E1E]/20 ml-auto">
-            {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'unsaved' ? '●' : ''}
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-[#1E1E1E]/20">
+              {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'unsaved' ? '●' : ''}
+            </span>
+            <button
+              onClick={handlePublishToggle}
+              className={`text-xs rounded-full px-2.5 py-1 font-medium transition-colors ${
+                isPublic
+                  ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                  : 'bg-[#3C3E3A]/8 text-[#3C3E3A]/50 hover:bg-[#3C3E3A]/15'
+              }`}
+            >
+              {isPublic ? 'Published' : 'Share'}
+            </button>
+            {isPublic && shareToken && (
+              <button
+                onClick={copyPublicLink}
+                className="text-xs text-[#7776BC] hover:text-[#7A82AB] transition-colors"
+              >
+                {copied ? 'Copied!' : 'Copy link'}
+              </button>
+            )}
+          </div>
         </div>
         <input
           type="text"
