@@ -1,5 +1,5 @@
 export default function Logo({ size = 28, theme = 'dark' }: { size?: number; theme?: 'dark' | 'light' }) {
-  const color = theme === 'dark' ? '#e7e5e4' : '#1c1917'
+  const color = theme === 'dark' ? '#E8F1F2' : '#1E1E1E'
 
   return (
     <svg
