@@ -10,6 +10,42 @@ import {
   CATEGORY_PROMPTS,
 } from '@/lib/anthropic'
 
+type Resource = {
+  type: string; text: string
+  reference?: string; attribution?: string; title?: string; source?: string
+}
+
+function formatResources(resources: Resource[]): { styleRef: string; contentResources: string } {
+  const past = resources.filter(r => r.type === 'past_talk')
+  const rest = resources.filter(r => r.type !== 'past_talk')
+
+  const styleRef = past.map(r => {
+    const title = r.title ? ` ("${r.title}")` : ''
+    return `--- Past talk by this speaker${title} ---\n${r.text.slice(0, 1500)}\n--- End style reference ---`
+  }).join('\n\n')
+
+  const contentResources = rest.map(r => {
+    if (r.type === 'scripture') {
+      const ref = r.reference ?? 'Scripture'
+      const src = r.source ? ` (${r.source})` : ''
+      return `[Scripture] ${ref}${src}: "${r.text}"`
+    }
+    if (r.type === 'quote') {
+      const by = r.attribution ? ` — ${r.attribution}` : ''
+      return `[Quote] "${r.text}"${by}`
+    }
+    if (r.type === 'personal_story') return `[Personal story] ${r.text}`
+    if (r.type === 'conference_talk') {
+      const title = r.title ? `"${r.title}"` : 'Conference talk'
+      const by = r.attribution ? ` by ${r.attribution}` : ''
+      return `[Conference talk] ${title}${by}: ${r.text}`
+    }
+    return `[Note] ${r.text}`
+  }).filter(Boolean).join('\n')
+
+  return { styleRef, contentResources }
+}
+
 // POST /api/talks/[id]/ai/draft
 // Generates a full draft from the saved outline. Streams prose back.
 export async function POST(
@@ -38,22 +74,25 @@ export async function POST(
   }
 
   const body = await req.json().catch(() => ({}))
-  const { personalNotes, tone } = body
+  const { tone, resources = [] } = body
 
   const categoryDesc = CATEGORY_PROMPTS[talk.category] ?? 'a talk'
   const outline = talk.outline as Record<string, unknown>
+  const { styleRef, contentResources } = formatResources(resources)
 
-  const prompt = `You are an expert writer specializing in ${categoryDesc}. 
+  const prompt = `You are an expert writer specializing in ${categoryDesc}.${styleRef ? `
+
+The speaker has provided a past talk as a voice/style reference. Study it carefully and mirror their writing voice — their vocabulary, sentence rhythm, storytelling approach, and tone — in the new draft.
+
+${styleRef}` : ''}
 
 Write a complete, polished first draft based on this outline:
 
 ${JSON.stringify(outline, null, 2)}
-
-${personalNotes ? `Speaker's personal notes and stories to weave in:\n${personalNotes}\n` : ''}
-${tone ? `Tone: ${tone}` : ''}
+${contentResources ? `\nResources to weave in:\n${contentResources}\n` : ''}${tone ? `\nTone: ${tone}` : ''}
 
 Guidelines:
-- Write in first person, warm and conversational
+- Write in first person, warm and conversational${styleRef ? '\n- Match the speaker\'s natural voice from the style reference above' : ''}
 - Use natural transitions between sections
 - Keep it authentic — avoid clichés and hollow filler phrases
 - For LDS talks: appropriate doctrinal references are welcome, but don't overload
