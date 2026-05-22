@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Logo from '@/components/Logo'
 
 export default function LandingPage() {
   const [email, setEmail] = useState('')
@@ -28,7 +29,10 @@ export default function LandingPage() {
     <main className="min-h-screen bg-[#0a0a0a] flex flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-8 py-6">
-        <span className="text-white font-semibold text-lg tracking-tight">✦ TalkWright</span>
+        <div className="flex items-center gap-2.5">
+          <Logo size={28} theme="dark" />
+          <span className="text-white font-semibold text-lg tracking-tight">TalkWright</span>
+        </div>
         <Link
           href="/sign-in"
           className="text-sm text-zinc-400 hover:text-white transition-colors"
