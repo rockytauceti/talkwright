@@ -290,8 +290,6 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
     <div className="max-w-2xl">
       {/* Header */}
       <div className="mb-8">
-        <Link href="/dashboard" className="text-sm text-zinc-400 hover:text-zinc-600 mb-4 inline-block">
-          ← Dashboard
         </Link>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span className="text-xs bg-zinc-100 text-zinc-500 rounded-full px-2.5 py-1 font-medium">
