@@ -115,10 +115,23 @@ export default function Sidebar() {
         )}
       </nav>
 
-      {/* User */}
-      <div className="px-4 py-4 border-t border-[#3C3E3A]/10 flex items-center gap-3">
-        <UserButton />
-        <span className="text-xs text-[#1E1E1E]/40 truncate">Account</span>
+      {/* Settings + User */}
+      <div className="border-t border-[#3C3E3A]/10">
+        <Link
+          href="/dashboard/settings"
+          className={`flex items-center gap-2.5 px-4 py-3 text-xs transition-colors ${
+            pathname === '/dashboard/settings'
+              ? 'text-[#7776BC] bg-[#7776BC]/6'
+              : 'text-[#1E1E1E]/40 hover:text-[#1E1E1E]/70 hover:bg-[#3C3E3A]/5'
+          }`}
+        >
+          <span>⚙</span>
+          <span>Settings</span>
+        </Link>
+        <div className="px-4 py-3 flex items-center gap-3">
+          <UserButton />
+          <span className="text-xs text-[#1E1E1E]/40 truncate">Account</span>
+        </div>
       </div>
     </aside>
   )
