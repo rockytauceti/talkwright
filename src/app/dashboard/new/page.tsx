@@ -121,21 +121,21 @@ export default function NewTalkPage() {
   return (
     <div className="max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900">What kind of talk?</h1>
-        <p className="text-zinc-500 text-sm mt-1">Pick a category to get started.</p>
+        <h1 className="text-2xl font-bold text-stone-900">What kind of talk?</h1>
+        <p className="text-stone-400 text-sm mt-1">Pick a category to get started.</p>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.value}
             onClick={() => createTalk(cat.value)}
-            className="group text-left p-4 rounded-xl border-2 border-zinc-200 hover:border-amber-400 hover:bg-amber-50 transition-all"
+            className="group text-left p-4 rounded-xl bg-white border border-stone-200 hover:border-stone-400 hover:shadow-sm transition-all"
           >
-            <div className="text-zinc-400 group-hover:text-amber-500 transition-colors mb-2">
+            <div className="text-stone-400 group-hover:text-stone-700 transition-colors mb-2.5">
               {cat.icon}
             </div>
-            <div className="font-semibold text-zinc-900 text-sm">{cat.label}</div>
-            <div className="text-zinc-400 text-xs mt-0.5">{cat.desc}</div>
+            <div className="font-semibold text-stone-900 text-sm">{cat.label}</div>
+            <div className="text-stone-400 text-xs mt-0.5">{cat.desc}</div>
           </button>
         ))}
       </div>
