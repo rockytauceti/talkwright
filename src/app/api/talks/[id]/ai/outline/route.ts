@@ -11,8 +11,7 @@ import {
 } from '@/lib/anthropic'
 
 // POST /api/talks/[id]/ai/outline
-// Body: { theme?, audience?, length?, personalNotes? }
-// Streams back a structured outline as JSON
+// Body: { theme?, audience?, length?, resources? }
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -26,7 +25,6 @@ export async function POST(
   const talk = await prisma.talk.findFirst({ where: { id, userId: user.id } })
   if (!talk) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404 })
 
-  // Credit check
   const credits = await checkAndResetCredits(user.id)
   if (credits.plan === 'free' && credits.used >= FREE_MONTHLY_LIMIT) {
     return new Response(
@@ -36,11 +34,42 @@ export async function POST(
   }
 
   const body = await req.json()
-  const { theme, audience, length = 5, personalNotes } = body
+  const { theme, audience, length = 5, resources = [], personalNotes } = body
 
   const categoryDesc = CATEGORY_PROMPTS[talk.category] ?? 'a talk'
+  const mins = Number(length)
   const lengthDesc =
-    length <= 3 ? '2–3 minutes' : length <= 7 ? '5–7 minutes' : '10–15 minutes'
+    mins <= 3  ? `${mins} minutes` :
+    mins <= 7  ? `${mins} minutes` :
+    mins <= 15 ? `${mins} minutes` :
+    `${mins} minutes`
+
+  // Format resources for prompt
+  const resourceLines: string[] = []
+  for (const r of resources) {
+    if (!r.text && !r.reference && !r.title) continue
+    if (r.type === 'scripture') {
+      const ref = r.reference ? `${r.reference}` : 'Scripture'
+      const src = r.source ? ` (${r.source})` : ''
+      resourceLines.push(`[Scripture] ${ref}${src}: "${r.text}"`)
+    } else if (r.type === 'quote') {
+      const by = r.attribution ? ` — ${r.attribution}` : ''
+      resourceLines.push(`[Quote] "${r.text}"${by}`)
+    } else if (r.type === 'personal_story') {
+      resourceLines.push(`[Personal story] ${r.text}`)
+    } else if (r.type === 'conference_talk') {
+      const title = r.title ? `"${r.title}"` : 'Conference talk'
+      const by = r.attribution ? ` by ${r.attribution}` : ''
+      resourceLines.push(`[Conference talk] ${title}${by}: ${r.text}`)
+    } else {
+      resourceLines.push(`[Note] ${r.text}`)
+    }
+  }
+  if (personalNotes) resourceLines.push(`[Speaker notes] ${personalNotes}`)
+
+  const resourceBlock = resourceLines.length
+    ? `\nResources the speaker wants to weave in:\n${resourceLines.join('\n')}`
+    : ''
 
   const prompt = `You are an expert talk writer specializing in ${categoryDesc}.
 
@@ -50,7 +79,7 @@ Details:
 - Theme/topic: ${theme || 'to be determined by the speaker'}
 - Audience: ${audience || 'general congregation'}
 - Target length: ${lengthDesc}
-${personalNotes ? `- Speaker's notes: ${personalNotes}` : ''}
+${resourceBlock}
 
 Return ONLY valid JSON in this exact format (no markdown, no explanation):
 {
@@ -106,7 +135,6 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
           }
         }
 
-        // Track usage
         await trackAIInteraction({
           userId: user.id,
           talkId: talk.id,
@@ -115,7 +143,6 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
           completionTokens: outputTokens,
         })
 
-        // Try to parse and save outline to DB
         try {
           const outline = JSON.parse(fullText)
           await prisma.talk.update({
@@ -126,14 +153,12 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
             },
           })
         } catch {
-          // Outline parse failed — still streamed, user can retry
+          // Outline parse failed — still streamed
         }
 
         controller.close()
       } catch (err) {
-        controller.enqueue(
-          encoder.encode(JSON.stringify({ error: String(err) }))
-        )
+        controller.enqueue(encoder.encode(JSON.stringify({ error: String(err) })))
         controller.close()
       }
     },
