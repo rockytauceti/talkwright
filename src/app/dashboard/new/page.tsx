@@ -121,21 +121,21 @@ export default function NewTalkPage() {
   return (
     <div className="max-w-2xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-stone-900">What kind of talk?</h1>
-        <p className="text-stone-400 text-sm mt-1">Pick a category to get started.</p>
+        <h1 className="text-2xl font-bold text-[#1E1E1E]">What kind of talk?</h1>
+        <p className="text-[#1E1E1E]/40 text-sm mt-1">Pick a category to get started.</p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.value}
             onClick={() => createTalk(cat.value)}
-            className="group text-left p-4 rounded-xl bg-white border border-stone-200 hover:border-stone-400 hover:shadow-sm transition-all"
+            className="group text-left p-4 rounded-xl bg-[#E8F1F2] border border-[#3C3E3A]/15 hover:border-[#7A82AB]/50 hover:shadow-sm transition-all"
           >
-            <div className="text-stone-400 group-hover:text-stone-700 transition-colors mb-2.5">
+            <div className="text-[#1E1E1E]/35 group-hover:text-[#7776BC] transition-colors mb-2.5">
               {cat.icon}
             </div>
-            <div className="font-semibold text-stone-900 text-sm">{cat.label}</div>
-            <div className="text-stone-400 text-xs mt-0.5">{cat.desc}</div>
+            <div className="font-semibold text-[#1E1E1E] text-sm">{cat.label}</div>
+            <div className="text-[#1E1E1E]/40 text-xs mt-0.5">{cat.desc}</div>
           </button>
         ))}
       </div>
