@@ -38,7 +38,7 @@ export async function PATCH(
     const existing = await prisma.talk.findFirst({ where: { id, userId: user.id } })
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-    const { title, body: talkBody, outline, notes, tags, status, category, metadata } = body
+    const { title, body: talkBody, outline, notes, tags, status, category, metadata, isPublic } = body
 
     // Compute word count + estimated minutes if body is provided
     let wordCount = existing.wordCount
@@ -46,7 +46,13 @@ export async function PATCH(
     if (typeof talkBody === 'string') {
       const words = talkBody.trim().split(/\s+/).filter(Boolean).length
       wordCount = words
-      estimatedMinutes = Math.ceil(words / 130) // ~130 wpm average speaking pace
+      estimatedMinutes = Math.ceil(words / 130)
+    }
+
+    // Generate shareToken when publishing for the first time
+    let shareToken = existing.shareToken
+    if (isPublic === true && !shareToken) {
+      shareToken = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
     }
 
     const talk = await prisma.talk.update({
@@ -58,8 +64,9 @@ export async function PATCH(
         ...(notes !== undefined && { notes }),
         ...(tags !== undefined && { tags }),
         ...(status !== undefined && { status }),
-        ...(category !== undefined ...(category !== undefined && { category }),...(category !== undefined && { category }), { category }),
-        ...(metadata !== undefined ...(category !== undefined && { category }),...(category !== undefined && { category }), { metadata }),
+        ...(category !== undefined && { category }),
+        ...(metadata !== undefined && { metadata }),
+        ...(isPublic !== undefined && { isPublic, shareToken }),
       },
     })
 
