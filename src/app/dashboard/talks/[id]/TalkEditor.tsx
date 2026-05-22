@@ -19,6 +19,17 @@ type Outline = {
   openingHook?: string
 }
 
+type Scripture = {
+  reference: string
+  text: string
+  matchWords: string[]
+}
+
+type Resource = {
+  title: string
+  description: string
+}
+
 type Talk = {
   id: string
   title: string
@@ -44,10 +55,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: 'Other',
 }
 
-const LENGTH_OPTIONS = [
-  { value: 3, label: '2–3 min' },
-  { value: 7, label: '5–7 min' },
-  { value: 15, label: '10–15 min' },
+const AUDIENCE_PRESETS = [
+  'General congregation',
+  'Youth',
+  'Young adults',
+  'Adults',
+  'Children',
+  'Families',
 ]
 
 const TONE_OPTIONS = [
@@ -55,6 +69,26 @@ const TONE_OPTIONS = [
   { value: 'formal', label: 'Formal' },
   { value: 'inspirational', label: 'Inspirational' },
 ]
+
+function HighlightedText({ text, words }: { text: string; words: string[] }) {
+  if (!words.length) return <>{text}</>
+  const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const parts = text.split(new RegExp(`(${escaped.join('|')})`, 'gi'))
+  const lowerWords = words.map(w => w.toLowerCase())
+  return (
+    <>
+      {parts.map((part, i) =>
+        lowerWords.some(w => part.toLowerCase() === w) ? (
+          <mark key={i} className="bg-amber-100 text-amber-900 not-italic rounded px-0.5">
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  )
+}
 
 export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
   const [title, setTitle] = useState(initialTalk.title)
@@ -65,16 +99,28 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
   const [estimatedMinutes, setEstimatedMinutes] = useState(initialTalk.estimatedMinutes)
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved')
 
-  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false)
-  const [outlineStreamText, setOutlineStreamText] = useState('')
-  const [outlineError, setOutlineError] = useState('')
+  // Outline form
   const [outlineForm, setOutlineForm] = useState({
     theme: '',
-    audience: '',
+    audience: 'General congregation',
+    customAudience: '',
     length: 7,
     personalNotes: '',
   })
+  const [useCustomAudience, setUseCustomAudience] = useState(false)
 
+  // Scripture suggestions
+  const [scriptures, setScriptures] = useState<Scripture[]>([])
+  const [resources, setResources] = useState<Resource[]>([])
+  const [loadingScriptures, setLoadingScriptures] = useState(false)
+  const scriptureTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Outline generation
+  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false)
+  const [outlineStreamText, setOutlineStreamText] = useState('')
+  const [outlineError, setOutlineError] = useState('')
+
+  // Draft generation
   const [isGeneratingDraft, setIsGeneratingDraft] = useState(false)
   const [draftStreamText, setDraftStreamText] = useState('')
   const [draftError, setDraftError] = useState('')
@@ -127,38 +173,73 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
     })
   }
 
+  function handleThemeChange(val: string) {
+    setOutlineForm(f => ({ ...f, theme: val }))
+    if (scriptureTimer.current) clearTimeout(scriptureTimer.current)
+    if (!val.trim()) {
+      setScriptures([])
+      setResources([])
+      return
+    }
+    scriptureTimer.current = setTimeout(async () => {
+      setLoadingScriptures(true)
+      try {
+        const res = await fetch(`/api/talks/${initialTalk.id}/ai/scriptures`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ theme: val }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setScriptures(data.scriptures ?? [])
+          setResources(data.resources ?? [])
+        }
+      } finally {
+        setLoadingScriptures(false)
+      }
+    }, 800)
+  }
+
+  function addScriptureToNotes(reference: string, text: string) {
+    const entry = `${reference}\n${text}`
+    const current = outlineForm.personalNotes.trim()
+    setOutlineForm(f => ({
+      ...f,
+      personalNotes: current ? `${current}\n\n${entry}` : entry,
+    }))
+  }
+
   async function generateOutline() {
     setIsGeneratingOutline(true)
     setOutlineError('')
     setOutlineStreamText('')
 
+    const audience = useCustomAudience
+      ? outlineForm.customAudience
+      : outlineForm.audience
+
     try {
       const res = await fetch(`/api/talks/${initialTalk.id}/ai/outline`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(outlineForm),
+        body: JSON.stringify({ ...outlineForm, audience }),
       })
-
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Generation failed')
       }
-
       const reader = res.body!.getReader()
       const decoder = new TextDecoder()
       let fullText = ''
-
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         fullText += decoder.decode(value)
         setOutlineStreamText(fullText)
       }
-
       const parsed: Outline = JSON.parse(fullText)
       setOutline(parsed)
       setOutlineStreamText('')
-
       if (parsed.title && (title === 'Untitled talk' || !title.trim())) {
         setTitle(parsed.title)
         scheduleSave({ title: parsed.title })
@@ -174,30 +255,25 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
     setIsGeneratingDraft(true)
     setDraftError('')
     setDraftStreamText('')
-
     try {
       const res = await fetch(`/api/talks/${initialTalk.id}/ai/draft`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tone, personalNotes: outlineForm.personalNotes }),
       })
-
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || 'Generation failed')
       }
-
       const reader = res.body!.getReader()
       const decoder = new TextDecoder()
       let fullText = ''
-
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         fullText += decoder.decode(value)
         setDraftStreamText(fullText)
       }
-
       setDraft(fullText)
       setDraftStreamText('')
       const words = fullText.trim().split(/\s+/).filter(Boolean).length
@@ -214,10 +290,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
     <div className="max-w-2xl">
       {/* Header */}
       <div className="mb-8">
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-400 hover:text-zinc-600 mb-4 inline-block"
-        >
+        <Link href="/dashboard" className="text-sm text-zinc-400 hover:text-zinc-600 mb-4 inline-block">
           ← Dashboard
         </Link>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -255,14 +328,9 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
       {/* Outline section */}
       <section className="mb-10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide">
-            Outline
-          </h2>
+          <h2 className="text-sm font-semibold text-zinc-500 uppercase tracking-wide">Outline</h2>
           {outline && !isGeneratingOutline && (
-            <button
-              onClick={() => setOutline(null)}
-              className="text-xs text-zinc-400 hover:text-zinc-600"
-            >
+            <button onClick={() => setOutline(null)} className="text-xs text-zinc-400 hover:text-zinc-600">
               Regenerate
             </button>
           )}
@@ -272,9 +340,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
           <div className="space-y-3">
             {outline.openingHook && (
               <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">
-                  Opening hook
-                </p>
+                <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Opening hook</p>
                 <p className="text-sm text-zinc-700">{outline.openingHook}</p>
               </div>
             )}
@@ -296,9 +362,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
             ))}
             {outline.scriptureOrQuote && (
               <div className="bg-zinc-50 rounded-xl p-4">
-                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1">
-                  Scripture / Quote
-                </p>
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-1">Scripture / Quote</p>
                 <p className="text-sm text-zinc-600 italic">{outline.scriptureOrQuote}</p>
               </div>
             )}
@@ -314,49 +378,83 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
             )}
           </div>
         ) : (
-          <div className="border-2 border-dashed border-zinc-200 rounded-xl p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-zinc-500 block mb-1">
-                  Theme / topic
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Faith in hard times"
-                  value={outlineForm.theme}
-                  onChange={e => setOutlineForm(f => ({ ...f, theme: e.target.value }))}
-                  className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-amber-400"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-zinc-500 block mb-1">Audience</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Young adults"
-                  value={outlineForm.audience}
-                  onChange={e => setOutlineForm(f => ({ ...f, audience: e.target.value }))}
-                  className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-amber-400"
-                />
-              </div>
-            </div>
+          <div className="border-2 border-dashed border-zinc-200 rounded-xl p-6 space-y-5">
+            {/* Theme */}
             <div>
-              <label className="text-xs font-medium text-zinc-500 block mb-2">Length</label>
-              <div className="flex gap-2">
-                {LENGTH_OPTIONS.map(opt => (
+              <label className="text-xs font-medium text-zinc-500 block mb-1">Theme / topic</label>
+              <input
+                type="text"
+                placeholder="e.g. Faith in hard times"
+                value={outlineForm.theme}
+                onChange={e => handleThemeChange(e.target.value)}
+                className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-amber-400"
+              />
+            </div>
+
+            {/* Audience */}
+            <div>
+              <label className="text-xs font-medium text-zinc-500 block mb-2">Audience</label>
+              <div className="flex flex-wrap gap-2">
+                {AUDIENCE_PRESETS.map(opt => (
                   <button
-                    key={opt.value}
-                    onClick={() => setOutlineForm(f => ({ ...f, length: opt.value }))}
+                    key={opt}
+                    onClick={() => {
+                      setUseCustomAudience(false)
+                      setOutlineForm(f => ({ ...f, audience: opt }))
+                    }}
                     className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
-                      outlineForm.length === opt.value
+                      !useCustomAudience && outlineForm.audience === opt
                         ? 'border-amber-400 bg-amber-50 text-amber-800 font-medium'
                         : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
                     }`}
                   >
-                    {opt.label}
+                    {opt}
                   </button>
                 ))}
+                <button
+                  onClick={() => setUseCustomAudience(true)}
+                  className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+                    useCustomAudience
+                      ? 'border-amber-400 bg-amber-50 text-amber-800 font-medium'
+                      : 'border-zinc-200 text-zinc-500 hover:border-zinc-300'
+                  }`}
+                >
+                  Custom…
+                </button>
+              </div>
+              {useCustomAudience && (
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="e.g. High school seniors"
+                  value={outlineForm.customAudience}
+                  onChange={e => setOutlineForm(f => ({ ...f, customAudience: e.target.value }))}
+                  className="mt-2 w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-amber-400"
+                />
+              )}
+            </div>
+
+            {/* Length slider */}
+            <div>
+              <label className="text-xs font-medium text-zinc-500 block mb-2">
+                Length —{' '}
+                <span className="text-zinc-900 font-semibold">{outlineForm.length} min</span>
+              </label>
+              <input
+                type="range"
+                min={2}
+                max={30}
+                step={1}
+                value={outlineForm.length}
+                onChange={e => setOutlineForm(f => ({ ...f, length: Number(e.target.value) }))}
+                className="w-full accent-amber-500"
+              />
+              <div className="flex justify-between text-xs text-zinc-300 mt-1 select-none">
+                <span>2m</span><span>10m</span><span>20m</span><span>30m</span>
               </div>
             </div>
+
+            {/* Personal notes */}
             <div>
               <label className="text-xs font-medium text-zinc-500 block mb-1">
                 Personal notes, stories, or scriptures
@@ -369,6 +467,53 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                 className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-900 placeholder-zinc-300 focus:outline-none focus:border-amber-400 resize-none"
               />
             </div>
+
+            {/* Scripture suggestions */}
+            {(loadingScriptures || scriptures.length > 0) && (
+              <div className="space-y-2 pt-1">
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                  Suggested scriptures
+                  <span className="normal-case font-normal ml-1 text-zinc-300">
+                    — click to add to notes
+                  </span>
+                </p>
+                {loadingScriptures ? (
+                  <div className="text-xs text-zinc-400 animate-pulse py-2">
+                    Finding relevant scriptures…
+                  </div>
+                ) : (
+                  scriptures.map((s, i) => (
+                    <button
+                      key={i}
+                      onClick={() => addScriptureToNotes(s.reference, s.text)}
+                      className="w-full text-left border border-zinc-100 hover:border-amber-200 hover:bg-amber-50/60 rounded-lg p-3 transition-colors group"
+                    >
+                      <p className="text-xs font-semibold text-zinc-700 group-hover:text-amber-700 mb-1">
+                        {s.reference}
+                      </p>
+                      <p className="text-xs text-zinc-500 leading-relaxed">
+                        <HighlightedText text={s.text} words={s.matchWords} />
+                      </p>
+                    </button>
+                  ))
+                )}
+
+                {resources.length > 0 && !loadingScriptures && (
+                  <>
+                    <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide pt-2">
+                      Related resources
+                    </p>
+                    {resources.map((r, i) => (
+                      <div key={i} className="border border-zinc-100 rounded-lg p-3">
+                        <p className="text-xs font-semibold text-zinc-700 mb-0.5">{r.title}</p>
+                        <p className="text-xs text-zinc-400">{r.description}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+
             {outlineError && <p className="text-red-500 text-sm">{outlineError}</p>}
             <button
               onClick={generateOutline}
