@@ -516,8 +516,8 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
 
             {outlineError && <p className="text-red-500 text-sm">{outlineError}</p>}
             <button
-              onClick={generateOutline}
-              className="bg-[#E8F1F2]0 hover:bg-[#3C3E3A] text-black font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors"
+              onClick={generateOutline} disabled={isGeneratingOutline}
+              className="bg-[#7776BC] hover:bg-[#7A82AB] text-[#E8F1F2] font-semibold rounded-lg px-5 py-2.5 text-sm transition-colors"
             >
               Generate outline →
             </button>
