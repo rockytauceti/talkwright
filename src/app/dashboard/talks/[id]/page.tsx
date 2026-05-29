@@ -34,6 +34,10 @@ export default async function TalkPage({
         outline: talk.outline as any,
         wordCount: talk.wordCount,
         estimatedMinutes: talk.estimatedMinutes,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata: talk.metadata as any,
+        isPublic: talk.isPublic,
+        shareToken: talk.shareToken,
       }}
     />
   )
