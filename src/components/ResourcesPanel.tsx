@@ -65,8 +65,7 @@ function ResourceCard({ resource, onChange, onDelete }: {
   const isLong = resource.text.length > 300
   const isLds = !!resource.reference?.trim() && !isBibleRef(resource.reference)
 
-  async function fetchScripture(ref: string, ver: BibleVersion) {
-    if (!ref.trim() || !isBibleRef(ref)) return
+  async function fetchBibleScripture(ref: string, ver: BibleVersion) {
     setFetchingText(true)
     try {
       const res = await fetch(`https://bible-api.com/${encodeURIComponent(ref.trim())}?translation=${ver}`)
@@ -75,23 +74,36 @@ function ResourceCard({ resource, onChange, onDelete }: {
       if (data.text && !data.error) {
         onChange({ ...resource, reference: ref, text: data.text.trim(), source: ver.toUpperCase() })
       }
-    } catch {
-      // silent fail — user can type manually
-    } finally {
-      setFetchingText(false)
-    }
+    } catch { /* silent */ } finally { setFetchingText(false) }
+  }
+
+  async function fetchLdsScripture(ref: string) {
+    setFetchingText(true)
+    try {
+      const res = await fetch(`/api/scriptures/lookup?ref=${encodeURIComponent(ref.trim())}`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.text) {
+        onChange({ ...resource, reference: data.reference || ref, text: data.text, source: 'LDS Standard Works' })
+      }
+    } catch { /* silent */ } finally { setFetchingText(false) }
   }
 
   function handleRefChange(val: string) {
     set({ reference: val })
     if (refTimer.current) clearTimeout(refTimer.current)
     if (!val.trim()) return
-    refTimer.current = setTimeout(() => fetchScripture(val, version), 900)
+    refTimer.current = setTimeout(() => {
+      if (isBibleRef(val)) fetchBibleScripture(val, version)
+      else fetchLdsScripture(val)
+    }, 900)
   }
 
   function handleVersionChange(ver: BibleVersion) {
     setVersion(ver)
-    if (resource.reference?.trim()) fetchScripture(resource.reference, ver)
+    if (resource.reference?.trim() && isBibleRef(resource.reference)) {
+      fetchBibleScripture(resource.reference, ver)
+    }
   }
 
   return (
@@ -133,7 +145,10 @@ function ResourceCard({ resource, onChange, onDelete }: {
               {fetchingText && <span className="text-[10px] text-[#1E1E1E]/25 animate-pulse ml-1">fetching…</span>}
             </div>
           ) : (
-            <p className="text-[10px] text-[#1E1E1E]/30">LDS scripture — paste text below</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-[#7776BC]/60 font-medium">LDS Standard Works</span>
+              {fetchingText && <span className="text-[10px] text-[#1E1E1E]/25 animate-pulse">fetching…</span>}
+            </div>
           )}
         </div>
       )}
