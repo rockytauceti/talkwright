@@ -59,6 +59,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
   const [isPublic, setIsPublic] = useState(initialTalk.isPublic)
   const [shareToken, setShareToken] = useState<string | null>(initialTalk.shareToken)
   const [copied, setCopied] = useState(false)
+  const [outlineCopied, setOutlineCopied] = useState(false)
 
   // User resources
   const [talkResources, setTalkResources] = useState<TalkResource[]>(
@@ -125,7 +126,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
     setDraft(val)
     const words = val.trim().split(/\s+/).filter(Boolean).length
     setWordCount(words)
-    setEstimatedMinutes(Math.ceil(words / 130))
+    setEstimatedMinutes(Math.ceil(words / 120))
     scheduleSave({ body: val })
   }
 
@@ -216,6 +217,25 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
     setStarters(null)
   }
 
+  function copyOutline() {
+    if (!outline) return
+    const parts: string[] = []
+    if (outline.title) parts.push(`# ${outline.title}`)
+    if (outline.theme) parts.push(`Theme: ${outline.theme}`)
+    if (outline.openingHook) parts.push(`\nOpening hook:\n${outline.openingHook}`)
+    parts.push('')
+    for (const s of (outline.sections ?? [])) {
+      parts.push(`## ${s.label}`)
+      parts.push(s.summary)
+      for (const pt of s.keyPoints) parts.push(`- ${pt}`)
+      parts.push('')
+    }
+    if (outline.scriptureOrQuote) parts.push(`"${outline.scriptureOrQuote}"`)
+    navigator.clipboard.writeText(parts.join('\n'))
+    setOutlineCopied(true)
+    setTimeout(() => setOutlineCopied(false), 2000)
+  }
+
   async function generateOutline() {
     setIsGeneratingOutline(true)
     setOutlineError('')
@@ -277,7 +297,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
       setDraftStreamText('')
       const words = fullText.trim().split(/\s+/).filter(Boolean).length
       setWordCount(words)
-      setEstimatedMinutes(Math.ceil(words / 130))
+      setEstimatedMinutes(Math.ceil(words / 120))
     } catch (err) {
       setDraftError(err instanceof Error ? err.message : 'Generation failed')
     } finally { setIsGeneratingDraft(false) }
@@ -342,9 +362,17 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-semibold text-[#1E1E1E]/35 uppercase tracking-wider">Outline</h2>
           {outline && !isGeneratingOutline && (
-            <button onClick={() => setOutline(null)} className="text-xs text-[#1E1E1E]/30 hover:text-[#1E1E1E]/60">
-              Regenerate
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={copyOutline}
+                className="text-xs text-[#7776BC] hover:text-[#7A82AB] transition-colors"
+              >
+                {outlineCopied ? 'Copied!' : 'Copy'}
+              </button>
+              <button onClick={() => setOutline(null)} className="text-xs text-[#1E1E1E]/30 hover:text-[#1E1E1E]/60">
+                Regenerate
+              </button>
+            </div>
           )}
         </div>
 
