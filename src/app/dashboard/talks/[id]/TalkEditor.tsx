@@ -236,7 +236,9 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
         fullText += decoder.decode(value)
         setOutlineStreamText(fullText)
       }
-      const cleanText = fullText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+      const jsonStart = fullText.indexOf('{')
+      const jsonEnd = fullText.lastIndexOf('}')
+      const cleanText = (jsonStart !== -1 && jsonEnd > jsonStart) ? fullText.slice(jsonStart, jsonEnd + 1) : fullText
       const parsed = JSON.parse(cleanText)
       if (!parsed.sections || !Array.isArray(parsed.sections)) {
         throw new Error(parsed.error || 'Failed to generate outline — please try again')
