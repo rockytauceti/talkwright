@@ -236,8 +236,11 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
         fullText += decoder.decode(value)
         setOutlineStreamText(fullText)
       }
-      const parsed: Outline = JSON.parse(fullText)
-      setOutline(parsed)
+      const parsed = JSON.parse(fullText)
+      if (!parsed.sections || !Array.isArray(parsed.sections)) {
+        throw new Error(parsed.error || 'Failed to generate outline — please try again')
+      }
+      setOutline(parsed as Outline)
       setOutlineStreamText('')
       if (parsed.title && (title === 'Untitled talk' || !title.trim())) {
         setTitle(parsed.title)
@@ -350,7 +353,7 @@ export default function TalkEditor({ initialTalk }: { initialTalk: Talk }) {
                 <p className="text-sm text-[#1E1E1E]/70">{outline.openingHook}</p>
               </div>
             )}
-            {outline.sections.map((section, i) => (
+            {(outline.sections ?? []).map((section, i) => (
               <div key={i} className="border border-[#3C3E3A]/12 rounded-xl p-4 bg-white">
                 <p className="font-semibold text-[#1E1E1E] text-sm mb-1">{section.label}</p>
                 <p className="text-[#1E1E1E]/55 text-sm mb-2">{section.summary}</p>
