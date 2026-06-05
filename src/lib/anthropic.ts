@@ -6,7 +6,7 @@ export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
 
-export const AI_MODEL = 'claude-3-5-haiku-20241022'
+export const AI_MODEL = 'claude-haiku-4-5-20251001'
 
 // Free tier: 5 AI interactions per month
 export const FREE_MONTHLY_LIMIT = 5
