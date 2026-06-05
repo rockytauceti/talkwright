@@ -144,7 +144,9 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
         })
 
         try {
-          const cleanFull = fullText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+          const jStart = fullText.indexOf('{')
+          const jEnd = fullText.lastIndexOf('}')
+          const cleanFull = (jStart !== -1 && jEnd > jStart) ? fullText.slice(jStart, jEnd + 1) : fullText
           const outline = JSON.parse(cleanFull)
           await prisma.talk.update({
             where: { id: talk.id },
