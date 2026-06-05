@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserButton } from '@clerk/nextjs'
@@ -51,6 +52,18 @@ function TalkLink({ talk, active }: { talk: Talk; active: boolean }) {
 export default function Sidebar() {
   const [talks, setTalks] = useState<Talk[]>([])
   const pathname = usePathname()
+
+  const router = useRouter()
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === 'n' || e.key === 'N') router.push('/dashboard/new')
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [router])
 
   useEffect(() => {
     fetch('/api/talks')
