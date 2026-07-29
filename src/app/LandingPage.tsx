@@ -18,18 +18,26 @@ export default function LandingPage() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email) return
     setLoading(true)
+    setError(false)
     try {
-      await fetch('/api/early-access', {
+      const res = await fetch('/api/early-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
+      if (!res.ok && res.status !== 409) {
+        setError(true)
+        return
+      }
       setSubmitted(true)
+    } catch {
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -125,7 +133,7 @@ export default function LandingPage() {
       <div className="border-t border-[#3C3E3A] px-6 py-16 text-center">
         <div className="max-w-md mx-auto">
           <p className="text-[#E8F1F2]/40 text-sm mb-6">
-            Not ready to sign up? Stay in the loop.
+            Want a heads-up when new features drop?
           </p>
           {submitted ? (
             <div className="inline-flex items-center gap-2 bg-[#3C3E3A] border border-[#3C3E3A] rounded-xl px-6 py-4 text-[#E8F1F2]/70 text-sm">
@@ -149,6 +157,11 @@ export default function LandingPage() {
                 {loading ? 'Joining…' : 'Notify me'}
               </button>
             </form>
+          )}
+          {error && (
+            <p className="text-red-400/80 text-sm mt-4">
+              Something went wrong — please try again.
+            </p>
           )}
         </div>
       </div>

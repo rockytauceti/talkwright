@@ -62,6 +62,13 @@ model EarlyAccess {
   createdAt DateTime @default(now())
 }
 
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  event      String
+  properties Json     @default("{}")
+  createdAt  DateTime @default(now())
+}
+
 enum AIInteractionType {
   outline
   draft

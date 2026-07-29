@@ -45,6 +45,10 @@ export async function POST(req: Request) {
         email,
       },
     })
+
+    await prisma.analyticsEvent.create({
+      data: { event: 'account_signup', properties: { clerkUserId: id, email } },
+    })
   }
 
   if (evt.type === 'user.deleted') {

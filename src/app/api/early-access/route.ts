@@ -11,6 +11,10 @@ export async function POST(req: Request) {
       create: { email },
     })
 
+    await prisma.analyticsEvent.create({
+      data: { event: 'early_access_signup', properties: { email } },
+    })
+
     return new Response('OK', { status: 200 })
   } catch {
     return new Response('Error', { status: 500 })
