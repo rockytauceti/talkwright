@@ -92,6 +92,39 @@ export default function LandingPage() {
               Sign in
             </Link>
           </div>
+          <div className="mt-8 w-full max-w-sm mx-auto">
+            <p className="text-[#E8F1F2]/40 text-sm mb-3">
+              Not ready yet? Get a heads-up when new features drop.
+            </p>
+            {submitted ? (
+              <div className="inline-flex items-center gap-2 bg-[#3C3E3A] border border-[#3C3E3A] rounded-xl px-6 py-4 text-[#E8F1F2]/70 text-sm">
+                ✓ You&apos;re on the list.
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="email"
+                  required
+                  placeholder="your@email.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="flex-1 bg-[#3C3E3A] border border-[#3C3E3A] rounded-xl px-4 py-3 text-[#E8F1F2] placeholder-[#E8F1F2]/25 focus:outline-none focus:border-[#7A82AB] transition-colors text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-[#3C3E3A] hover:bg-[#7A82AB] text-[#E8F1F2] font-medium rounded-xl px-5 py-3 transition-colors disabled:opacity-50 whitespace-nowrap text-sm border border-[#7A82AB]/30"
+                >
+                  {loading ? 'Joining…' : 'Notify me'}
+                </button>
+              </form>
+            )}
+            {error && (
+              <p className="text-red-400/80 text-sm mt-2">
+                Something went wrong — please try again.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -126,43 +159,6 @@ export default function LandingPage() {
             title="Full drafts from your notes"
             body="Add your personal stories and notes, then generate a complete draft in your voice. Edit, refine, and deliver with confidence."
           />
-        </div>
-      </div>
-
-      {/* Email capture */}
-      <div className="border-t border-[#3C3E3A] px-6 py-16 text-center">
-        <div className="max-w-md mx-auto">
-          <p className="text-[#E8F1F2]/40 text-sm mb-6">
-            Want a heads-up when new features drop?
-          </p>
-          {submitted ? (
-            <div className="inline-flex items-center gap-2 bg-[#3C3E3A] border border-[#3C3E3A] rounded-xl px-6 py-4 text-[#E8F1F2]/70 text-sm">
-              ✓ You&apos;re on the list.
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="email"
-                required
-                placeholder="your@email.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="flex-1 bg-[#3C3E3A] border border-[#3C3E3A] rounded-xl px-4 py-3 text-[#E8F1F2] placeholder-[#E8F1F2]/25 focus:outline-none focus:border-[#7A82AB] transition-colors text-sm"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-[#3C3E3A] hover:bg-[#7A82AB] text-[#E8F1F2] font-medium rounded-xl px-5 py-3 transition-colors disabled:opacity-50 whitespace-nowrap text-sm border border-[#7A82AB]/30"
-              >
-                {loading ? 'Joining…' : 'Notify me'}
-              </button>
-            </form>
-          )}
-          {error && (
-            <p className="text-red-400/80 text-sm mt-4">
-              Something went wrong — please try again.
-            </p>
-          )}
         </div>
       </div>
 
