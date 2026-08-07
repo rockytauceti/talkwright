@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Logo from '@/components/Logo'
 
@@ -19,6 +19,14 @@ export default function LandingPage() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)
+  const [waitlistCount, setWaitlistCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch('/api/early-access/count')
+      .then(r => r.json())
+      .then(d => setWaitlistCount(d.count))
+      .catch(() => {})
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -122,6 +130,11 @@ export default function LandingPage() {
             {error && (
               <p className="text-red-400/80 text-sm mt-2">
                 Something went wrong — please try again.
+              </p>
+            )}
+            {waitlistCount !== null && waitlistCount > 0 && (
+              <p className="text-[#E8F1F2]/30 text-xs mt-3">
+                {waitlistCount} {waitlistCount === 1 ? 'person' : 'people'} already on the list.
               </p>
             )}
           </div>
